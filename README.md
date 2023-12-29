@@ -22,6 +22,7 @@ An advanced drawer widget, that can be fully customized with size, text, color, 
 |`animateChildDecoration`|Indicates that [childDecoration] might be animated or not.|*bool*|true|
 |`rtlOpening`|Opening from Right-to-left.|*bool*|false|
 |`disabledGestures`|Disable gestures.|*bool*|false|
+|`disableFling`|Disable fling to open and close the drawer. Only works when [disabledGestures] is false.|*bool*|false|
 
 ## Preview
 | Preview Tap | Preview Gesture |

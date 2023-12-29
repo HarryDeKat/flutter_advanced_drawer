@@ -17,6 +17,7 @@ class AdvancedDrawer extends StatefulWidget {
     this.animateChildDecoration = true,
     this.rtlOpening = false,
     this.disabledGestures = false,
+    this.disableFling = false,
     this.animationController,
   }) : super(key: key);
 
@@ -60,6 +61,9 @@ class AdvancedDrawer extends StatefulWidget {
   /// Disable gestures.
   final bool disabledGestures;
 
+  /// Disable fling to open and close the drawer. Only works when [disabledGestures] is false.
+  final bool disableFling;
+
   /// Controller that controls widget animation.
   final AnimationController? animationController;
 
@@ -75,6 +79,7 @@ class _AdvancedDrawerState extends State<AdvancedDrawer>
   late AnimationController _animationController;
 
   late Animation<double> _drawerScaleAnimation;
+  late Animation<double> _drawerFadeAnimation;
   late Animation<Offset> _childSlideAnimation;
   late Animation<double> _childScaleAnimation;
   late Animation<Decoration> _childDecorationAnimation;
@@ -127,8 +132,11 @@ class _AdvancedDrawerState extends State<AdvancedDrawer>
                     alignment: widget.rtlOpening
                         ? Alignment.centerLeft
                         : Alignment.centerRight,
-                    child: RepaintBoundary(
-                      child: widget.drawer,
+                    child: FadeTransition(
+                      opacity: _drawerFadeAnimation,
+                      child: RepaintBoundary(
+                        child: widget.drawer,
+                      ),
                     ),
                   ),
                 ),
@@ -139,6 +147,9 @@ class _AdvancedDrawerState extends State<AdvancedDrawer>
                     widget.rtlOpening ? TextDirection.rtl : TextDirection.ltr,
                 child: ScaleTransition(
                   scale: _childScaleAnimation,
+                  alignment: widget.rtlOpening
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Builder(
                     builder: (_) {
                       final childStack = Stack(
@@ -229,6 +240,11 @@ class _AdvancedDrawerState extends State<AdvancedDrawer>
       end: 1.0,
     ).animate(parentAnimation);
 
+    _drawerFadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1.0,
+    ).animate(parentAnimation);
+
     _childSlideAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: Offset(widget.openRatio, 0),
@@ -275,6 +291,16 @@ class _AdvancedDrawerState extends State<AdvancedDrawer>
     if (!_captured) return;
 
     _captured = false;
+
+    double velocity = details.primaryVelocity! * (widget.rtlOpening ? -1 : 1);
+
+    if (velocity >= kMinFlingVelocity && !widget.disableFling) {
+      _animationController.forward();
+      return;
+    } else if (velocity <= kMinFlingVelocity * -1 && !widget.disableFling) {
+      _animationController.reverse();
+      return;
+    }
 
     if (_animationController.value >= 0.5) {
       if (_controller.value.visible) {
