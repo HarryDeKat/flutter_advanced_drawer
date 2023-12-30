@@ -152,27 +152,19 @@ class _AdvancedDrawerState extends State<AdvancedDrawer>
                       : Alignment.centerLeft,
                   child: Builder(
                     builder: (_) {
-                      final childStack = Stack(
-                        children: [
-                          RepaintBoundary(child: widget.child),
+                      final childStack =
                           ValueListenableBuilder<AdvancedDrawerValue>(
-                            valueListenable: _controller,
-                            builder: (_, value, __) {
-                              if (!value.visible) {
-                                return const SizedBox();
-                              }
-
-                              return Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: _controller.hideDrawer,
-                                  highlightColor: Colors.transparent,
-                                  child: Container(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                        valueListenable: _controller,
+                        builder: (_, value, __) {
+                          return InkWell(
+                            onTap: _controller.hideDrawer,
+                            overlayColor: const MaterialStatePropertyAll(
+                                Colors.transparent),
+                            child: AbsorbPointer(
+                                absorbing: value.visible,
+                                child: RepaintBoundary(child: widget.child)),
+                          );
+                        },
                       );
 
                       if (widget.animateChildDecoration &&
@@ -293,16 +285,16 @@ class _AdvancedDrawerState extends State<AdvancedDrawer>
     _captured = false;
 
     double velocity = details.primaryVelocity! * (widget.rtlOpening ? -1 : 1);
+    bool isOpening = false;
 
-    if (velocity >= kMinFlingVelocity && !widget.disableFling) {
-      _animationController.forward();
-      return;
-    } else if (velocity <= kMinFlingVelocity * -1 && !widget.disableFling) {
-      _animationController.reverse();
-      return;
-    }
+    isOpening = (_animationController.value >= 0.5);
+    isOpening = (velocity >= kMinFlingVelocity && !widget.disableFling)
+        ? true
+        : (velocity <= kMinFlingVelocity * -1 && !widget.disableFling)
+            ? false
+            : isOpening;
 
-    if (_animationController.value >= 0.5) {
+    if (isOpening) {
       if (_controller.value.visible) {
         _animationController.forward();
       } else {
